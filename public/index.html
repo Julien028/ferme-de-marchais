@@ -120,14 +120,19 @@
     background: var(--ardoise); color: #fff;
   }
   .entete .conteneur { display: flex; align-items: center; justify-content: space-between; height: 4.5rem; }
-  .logo { font-family: var(--police-titre); font-weight: 700; font-size: 1.2rem; color: #fff; text-decoration: none; }
+  .logo { font-family: var(--police-titre); font-weight: 700; font-size: 1.75rem; color: #fff; text-decoration: none; white-space: nowrap;
+          display: flex; align-items: center; gap: .55rem; }
+  .logo-dessin { height: 2.6rem; width: auto; flex-shrink: 0; }
   .menu { display: flex; gap: 1.6rem; list-style: none; margin: 0; padding: 0; }
-  .menu a { color: #fff; text-decoration: none; font-weight: 600; }
+  .menu a { color: #fff; text-decoration: none; font-weight: 600; white-space: nowrap; }
+  @media (max-width: 1000px) { .menu { gap: 1rem; } }
   .menu a:hover { color: var(--patate); }
   .bouton-menu { display: none; background: none; border: 2px solid #fff; color: #fff;
                  font: inherit; font-weight: 600; padding: .35rem .8rem; border-radius: 4px; cursor: pointer; }
 
   @media (max-width: 760px) {
+    .logo { font-size: 1.35rem; gap: .4rem; }
+    .logo-dessin { height: 2.1rem; }
     .bouton-menu { display: block; }
     .menu { display: none; position: absolute; top: 4.5rem; left: 0; right: 0;
             flex-direction: column; gap: 0; background: var(--ardoise); padding: .5rem 1.25rem 1rem; }
@@ -435,7 +440,36 @@
 </div>
 <header class="entete">
   <div class="conteneur">
-    <a class="logo" href="#accueil" data-info="nom">Ferme de Marchais</a>
+    <a class="logo" href="#accueil">
+      <svg class="logo-dessin" viewBox="0 0 64 48" aria-hidden="true">
+        <!-- pomme de terre -->
+        <path d="M8 30C6 20 14 13 24 14C34 15 40 21 39 30C38 39 30 43 21 42C12 41 9 36 8 30Z" fill="#d4a95f" stroke="#8a6326" stroke-width="1.6"/>
+        <path d="M14 22C17 18 22 17 26 18" fill="none" stroke="#ecd09a" stroke-width="1.6" stroke-linecap="round"/>
+        <g fill="#8a6326"><circle cx="18" cy="27" r="1.2"/><circle cx="29" cy="23" r="1.2"/><circle cx="24" cy="35" r="1.2"/><circle cx="33" cy="32" r="1.1"/></g>
+        <!-- brin de lavande -->
+        <g fill="none" stroke="#8fbf6a" stroke-width="1.5" stroke-linecap="round">
+          <path d="M50 45Q47 26 44 6"/><path d="M51 45Q52 24 52 3"/><path d="M52 45Q56 27 60 9"/>
+        </g>
+        <g fill="#a98ae0">
+          <ellipse cx="44.2" cy="6" rx="1.4" ry="2.2"/>
+          <ellipse cx="43.2" cy="10.5" rx="1.4" ry="2.2" transform="rotate(-25 43.2 10.5)"/><ellipse cx="46.4" cy="10.5" rx="1.4" ry="2.2" transform="rotate(25 46.4 10.5)"/>
+          <ellipse cx="43.8" cy="14.5" rx="1.4" ry="2.2" transform="rotate(-25 43.8 14.5)"/><ellipse cx="47" cy="14.5" rx="1.4" ry="2.2" transform="rotate(25 47 14.5)"/>
+          <ellipse cx="44.4" cy="18.5" rx="1.3" ry="2" transform="rotate(-25 44.4 18.5)"/><ellipse cx="47.6" cy="18.5" rx="1.3" ry="2" transform="rotate(25 47.6 18.5)"/>
+          <ellipse cx="52" cy="3" rx="1.4" ry="2.2"/>
+          <ellipse cx="50.4" cy="7.5" rx="1.4" ry="2.2" transform="rotate(-25 50.4 7.5)"/><ellipse cx="53.6" cy="7.5" rx="1.4" ry="2.2" transform="rotate(25 53.6 7.5)"/>
+          <ellipse cx="50.4" cy="11.5" rx="1.4" ry="2.2" transform="rotate(-25 50.4 11.5)"/><ellipse cx="53.6" cy="11.5" rx="1.4" ry="2.2" transform="rotate(25 53.6 11.5)"/>
+          <ellipse cx="50.4" cy="15.5" rx="1.3" ry="2" transform="rotate(-25 50.4 15.5)"/><ellipse cx="53.6" cy="15.5" rx="1.3" ry="2" transform="rotate(25 53.6 15.5)"/>
+          <ellipse cx="59.8" cy="9" rx="1.4" ry="2.2" transform="rotate(25 59.8 9)"/>
+          <ellipse cx="57.6" cy="13" rx="1.4" ry="2.2" transform="rotate(-5 57.6 13)"/><ellipse cx="60.6" cy="14" rx="1.4" ry="2.2" transform="rotate(45 60.6 14)"/>
+          <ellipse cx="56.6" cy="17" rx="1.3" ry="2" transform="rotate(-5 56.6 17)"/><ellipse cx="59.6" cy="18" rx="1.3" ry="2" transform="rotate(45 59.6 18)"/>
+        </g>
+        <g fill="#8a6bc9">
+          <ellipse cx="45" cy="22.5" rx="1.1" ry="1.7"/><ellipse cx="52" cy="19.5" rx="1.1" ry="1.7"/><ellipse cx="57.4" cy="21.5" rx="1.1" ry="1.7" transform="rotate(20 57.4 21.5)"/>
+        </g>
+        <rect x="47.5" y="34" width="8" height="3.2" rx="1.2" fill="#e8c46a"/>
+      </svg>
+      <span data-info="nom">Ferme de Marchais</span>
+    </a>
     <button class="bouton-menu" aria-expanded="false" aria-controls="menu">Menu</button>
     <ul class="menu" id="menu">
       <li><a href="#produits">Les produits</a></li>
