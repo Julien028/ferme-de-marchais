@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.png" type="image/png" sizes="48x48">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>Le distributeur de la Ferme de Marchais – Boutigny-sur-Essonne</title>
 <meta name="description" content="Distributeur automatique de produits de la ferme à Boutigny-sur-Essonne : pommes de terre, épicerie locale, packs petit-déjeuner et apéro. Paiement par carte bancaire.">
 
@@ -120,24 +123,26 @@
     background: var(--ardoise); color: #fff;
   }
   .entete .conteneur { display: flex; align-items: center; justify-content: space-between; height: 4.5rem; }
-  .logo { font-family: var(--police-titre); font-weight: 700; font-size: 1.75rem; color: #fff; text-decoration: none; white-space: nowrap;
+  .logo { font-family: var(--police-titre); font-weight: 700; font-size: 2.3rem; color: #fff; text-decoration: none; white-space: nowrap;
           display: flex; align-items: center; gap: .55rem; }
-  .logo-dessin { height: 2.6rem; width: auto; flex-shrink: 0; }
+  .logo-dessin { height: 3.2rem; width: auto; flex-shrink: 0; }
   .menu { display: flex; gap: 1.6rem; list-style: none; margin: 0; padding: 0; }
   .menu a { color: #fff; text-decoration: none; font-weight: 600; white-space: nowrap; }
-  @media (max-width: 1000px) { .menu { gap: 1rem; } }
   .menu a:hover { color: var(--patate); }
   .bouton-menu { display: none; background: none; border: 2px solid #fff; color: #fff;
                  font: inherit; font-weight: 600; padding: .35rem .8rem; border-radius: 4px; cursor: pointer; }
 
-  @media (max-width: 760px) {
-    .logo { font-size: 1.35rem; gap: .4rem; }
-    .logo-dessin { height: 2.1rem; }
+  @media (max-width: 1100px) {
+    .logo { font-size: 2.1rem; }
     .bouton-menu { display: block; }
     .menu { display: none; position: absolute; top: 4.5rem; left: 0; right: 0;
             flex-direction: column; gap: 0; background: var(--ardoise); padding: .5rem 1.25rem 1rem; }
     .menu.ouvert { display: flex; }
     .menu a { display: block; padding: .7rem 0; border-top: 1px solid rgba(255,255,255,.15); }
+  }
+  @media (max-width: 560px) {
+    .logo { font-size: min(1.55rem, calc((100vw - 180px) / 8.5)); gap: .4rem; }
+    .logo-dessin { height: 2.4rem; }
   }
 
   /* ---------- 3. L'accueil (la photo du container) ---------- */
