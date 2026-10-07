@@ -21,14 +21,19 @@ Ce site n'est pas fait comme les autres applis (voir `../LISEZ-MOI-applications.
 - Adresse : https://ferme-de-marchais.pages.dev/ (donnée par Julien le 07/10/2026).
   C'est un projet **Cloudflare Pages** nommé `ferme-de-marchais`, déposé à la main par zip.
   La notice d'origine parle de `distributeur-marchais` : ce n'est pas le nom retenu.
-  Le compte Cloudflare utilisé n'a pas été vérifié.
+  Compte vérifié le 07/10/2026 : celui de bretonvilliers28@gmail.com, le même que wrangler
+  sur ce poste.
 - Réglages faits dans le tableau de bord Cloudflare, à ne pas écraser :
   liaison KV `DISTRIBUTEUR`, secret `ADMIN_PASSWORD`, variable facultative `ADMIN_ID`.
 - **Ne pas ajouter de fichier `wrangler.toml` / `wrangler.jsonc` sans vérifier** : sur un
   projet Pages, il remplace les réglages du tableau de bord et peut faire sauter la liaison KV.
 - Un projet Pages créé par dépôt direct ne peut pas être relié à GitHub après coup.
-  Publication prévue : `npx wrangler pages deploy public --project-name ferme-de-marchais`
-  (vérifier d'abord que wrangler est connecté au bon compte Cloudflare).
+  Publication prévue, **avec l'accord de Julien à chaque fois** :
+  `npx wrangler pages deploy public --project-name ferme-de-marchais --branch main`
+  Le `--branch main` est indispensable : la version en ligne est sur la branche `main`,
+  alors que le git local s'appelle `master`. Sans lui, la publication part en simple
+  aperçu et le site ne change pas. Après publication, vérifier l'adresse et
+  `/api/session` (doit répondre `{"admin":false}`, preuve que la liaison KV tient).
 - Le contenu modifié dans l'administration vit dans Cloudflare KV, pas dans ces fichiers :
   `depart.json` n'est que le contenu de départ.
 
