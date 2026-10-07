@@ -1,0 +1,58 @@
+SITE DU DISTRIBUTEUR – VERSION RÉELLE POUR CLOUDFLARE PAGES
+============================================================
+
+Avec cette version, les modifications faites dans l'administration sont
+enregistrées sur le serveur Cloudflare : tout le monde les voit, sur tous
+les appareils. L'administration est protégée par un mot de passe.
+
+Contenu :
+  index.html     le site
+  _worker.js     la partie serveur (enregistrement, photos, mot de passe)
+  depart.json    le contenu de départ du distributeur
+  affiche.html   l'affiche A4 avec le QR code (+ qrcode.js)
+  photos/        les photos des produits
+
+MISE EN LIGNE (une seule fois, environ 10 minutes)
+--------------------------------------------------
+1. Créer l'espace de stockage
+   dash.cloudflare.com > "Storage & Databases" > "KV" > "Create"
+   Nom : distributeur
+
+2. Déposer le site
+   "Workers & Pages" > "Créer" > onglet "Pages" > "Importer des ressources"
+   Nom du projet : distributeur-marchais
+   Glisser le fichier .zip > "Déployer le site"
+
+3. Relier le stockage au site
+   Ouvrir le projet > "Paramètres" (Settings) > "Liaisons" (Bindings)
+   > "Ajouter" > "Espace de noms KV"
+   Nom de la variable : DISTRIBUTEUR      (exactement, en majuscules)
+   Espace de noms KV  : distributeur
+
+4. Choisir le mot de passe de l'administration
+   "Paramètres" > "Variables et secrets" > "Ajouter"
+   Type : Secret – Nom : ADMIN_PASSWORD – Valeur : le mot de passe choisi
+   (facultatif : Type Texte – Nom : ADMIN_ID – Valeur : l'identifiant,
+    "clotilde" par défaut)
+
+5. Redéployer pour que les réglages 3 et 4 soient pris en compte
+   Onglet "Déploiements" > "Créer un déploiement" > glisser à nouveau le .zip
+
+MODIFIER LES TEXTES DU SITE
+  Une fois connecté, bouton "Informations du site" (bandeau en haut de la
+  section des produits) : nom de la ferme, titre, phrase d'accueil, horaires,
+  adresse, téléphone, mail, lien Facebook et textes sur les fermes.
+  Aucun redéploiement n'est nécessaire.
+
+UTILISATION
+-----------
+Site : https://distributeur-marchais.pages.dev
+Administration : lien "Administration" en bas de page
+  (ou https://distributeur-marchais.pages.dev/#admin)
+Identifiant : clotilde – Mot de passe : celui de l'étape 4
+
+VÉRIFIER QUE TOUT FONCTIONNE
+----------------------------
+Si un bandeau jaune "Simulation" apparaît en haut du site, la partie
+serveur n'est pas active : vérifier le nom DISTRIBUTEUR (étape 3) et
+refaire l'étape 5.
