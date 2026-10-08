@@ -412,6 +412,19 @@
   .banque.choix button:hover, .banque.choix button:focus-visible { border-color: var(--patate); }
   .banque.choix img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 5px; display: block; }
   .banque.choix span { display: block; padding: .2rem .25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Mes produits */
+  .liste-produits { display: flex; flex-direction: column; gap: .6rem; margin: .6rem 0; }
+  .produit-ligne { display: grid; grid-template-columns: 64px 1fr; gap: .4rem .8rem; align-items: center; padding: .6rem; border: 2px solid var(--inox-bord); border-radius: 8px; }
+  .produit-ligne.hors { background: #f4f5f6; }
+  .produit-ligne img, .produit-ligne .sans-photo { width: 64px; height: 48px; object-fit: cover; border-radius: 5px; background: var(--inox); }
+  .produit-texte strong { display: block; }
+  .produit-texte span { display: block; font-size: .88rem; color: var(--texte-doux); }
+  .produit-texte .statut { font-weight: 600; color: var(--vert-fonce); }
+  .produit-ligne.hors .statut { color: var(--texte-doux); }
+  .produit-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .4rem; }
+  .produit-actions button { font: inherit; font-size: .88rem; font-weight: 600; padding: .35rem .7rem; border-radius: 6px; border: 2px solid var(--ardoise); background: #fff; color: var(--ardoise); cursor: pointer; }
+  .produit-placer { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .5rem; }
+  .produit-placer input { flex: 1 1 12rem; }
   .ajout-photo { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin: .4rem 0 .8rem; }
   .ajout-photo input[type=text] { flex: 1 1 14rem; }
   .bouton-fichier { display: inline-block; cursor: pointer; }
@@ -532,6 +545,7 @@
     <div class="bandeau-admin" id="bandeau-admin" hidden>
       Mode administrateur&nbsp;: touchez un casier, puis <strong>Modifier</strong> pour changer le produit, la description ou les photos.
       <button class="btn clair" type="button" id="bouton-infos" style="margin-left:.7rem">Informations du site</button>
+      <button class="btn clair" type="button" id="bouton-produits" hidden>Mes produits</button>
       <button class="btn clair" type="button" id="bouton-banque" hidden>Banque de photos</button>
       <a class="btn clair" href="affiche.html">Affiches et flyers</a>
     </div>
@@ -801,6 +815,8 @@ async function stockageServeur() {
     async enregistrerFamilles(liste) { await envoyer("/api/familles", { liste }); donnees.familles = liste; pousser(); },
     async enregistrerInfos(valeurs) { await envoyer("/api/infos", { infos: valeurs }); donnees.infos = valeurs; pousser(); },
     async envoyerPhoto(blob) { return (await envoyer("/api/photos", blob, "image/jpeg")).id; },
+    lireProduits: () => donnees.produits ? donnees.produits.map(p => ({ ...p })) : null,   // null : liste jamais créée
+    async enregistrerProduits(liste) { donnees = (await envoyer("/api/produits", { liste })).contenu; pousser(); },
     lireBanque: () => [...(donnees.banque || BANQUE_DEPART)],
     async enregistrerBanque(liste) { await envoyer("/api/banque", { liste }); donnees.banque = liste; },
     async connexion(identifiant, motDePasse) {
@@ -989,7 +1005,10 @@ function produitsExistants() {       // un exemplaire de chaque produit déjà p
 function ouvrirEdition(no) {
   const p = casiers[no] && estRenseigne(casiers[no]) ? casiers[no] : { famille: familles[0]?.id || "vide" };
   let photos = [...(p.photos || [])];
-  const produits = produitsExistants();
+  // Avec le serveur : on choisit dans "Mes produits", et la case retient quel produit elle contient.
+  const avecListe = !!S.enregistrerProduits;
+  const produits = avecListe ? catalogue().sort((a, b) => a.nom.localeCompare(b.nom, "fr")) : produitsExistants();
+  let produitChoisi = avecListe && estRenseigne(p) ? (produits.find(q => memeProduit(p, q))?.id || null) : null;
   const optionsFamilles = sel => familles.map(f => '<option value="' + esc(f.id) + '"' + (sel === f.id ? " selected" : "") + ">" + esc(f.nom) + "</option>").join("") +
     '<option value="vide"' + (sel === "vide" ? " selected" : "") + ">— Casier vide —</option>";
 
@@ -999,10 +1018,11 @@ function ouvrirEdition(no) {
     '<form class="form-admin" id="form-admin">' +
       '<div class="choix-produit">' +
         '<label for="e-produit">Produit</label>' +
-        '<div class="ligne-plus"><select id="e-produit"><option value="">Choisir un produit déjà en vente…</option>' +
+        '<div class="ligne-plus"><select id="e-produit"><option value="">' + (avecListe ? "Choisir dans mes produits…" : "Choisir un produit déjà en vente…") + '</option>' +
           produits.map((q, i) => '<option value="' + i + '">' + esc(q.nom) + (q.prix ? " – " + esc(q.prix) : "") + "</option>").join("") +
         '</select><button type="button" class="btn-plus" id="e-nouveau-produit" title="Nouveau produit">+ Nouveau produit</button></div>' +
-        '<p class="aide">Choisir un produit existant remplit la fiche. « Nouveau produit » la vide pour en créer un.</p>' +
+        '<p class="aide">Choisir un produit existant remplit la fiche. « Nouveau produit » la vide pour en créer un.' +
+          (avecListe ? " Le produit est aussi enregistré dans « Mes produits », et un changement s'applique à toutes ses cases." : "") + "</p>" +
       "</div>" +
       '<div class="deux">' +
         '<div><label for="e-nom">Nom du produit</label><input type="text" id="e-nom" maxlength="80" placeholder="ex. Pommes de terre Agata"></div>' +
@@ -1061,11 +1081,11 @@ function ouvrirEdition(no) {
   // Produit existant ou nouveau produit
   $("e-produit").addEventListener("change", () => {
     const q = produits[+$("e-produit").value];
-    if (q) { remplir(q); message("Fiche remplie avec « " + q.nom + " » : vous pouvez l'ajuster."); }
+    if (q) { remplir(q); produitChoisi = q.id || null; message("Fiche remplie avec « " + q.nom + " » : vous pouvez l'ajuster."); }
   });
   $("e-nouveau-produit").addEventListener("click", () => {
     remplir({ famille: $("e-famille").value === "vide" ? (familles[0]?.id || "vide") : $("e-famille").value });
-    $("e-produit").value = "";
+    $("e-produit").value = ""; produitChoisi = null;
     $("e-nom").focus();
     message("Nouveau produit : remplissez la fiche puis enregistrez.");
   });
@@ -1090,7 +1110,7 @@ function ouvrirEdition(no) {
   });
 
   $("e-vider").addEventListener("click", () => {
-    remplir({}); $("e-famille").value = "vide"; $("e-produit").value = "";
+    remplir({}); $("e-famille").value = "vide"; $("e-produit").value = ""; produitChoisi = null;
     message("Casier vidé : pensez à enregistrer.");
   });
 
@@ -1139,6 +1159,13 @@ function ouvrirEdition(no) {
     if (inconnus.length) { message("Casier(s) inexistant(s) : " + inconnus.join(", "), "err"); return; }
     $("e-enregistrer").disabled = true; message("Enregistrement…");
     try {
+      if (avecListe && fam !== "vide") {       // range aussi le produit dans "Mes produits"
+        const id = produitChoisi || nouvelIdProduit(contenu.nom);
+        const liste = catalogue(), fiche = { id, ...ficheProduit(contenu) }, i = liste.findIndex(x => x.id === id);
+        if (i >= 0) liste[i] = fiche; else liste.push(fiche);
+        await enregistrerCatalogue(liste);
+        contenu.produit = produitChoisi = id;
+      }
       await S.enregistrerCasiers([no, ...copies], contenu);
       message(copies.length ? "Enregistré dans " + (copies.length + 1) + " casiers." : "Enregistré.", "ok");
       setTimeout(() => ouvrirFiche(no), 700);
@@ -1277,6 +1304,204 @@ function ouvrirBanque() {
 }
 document.getElementById("bouton-banque").addEventListener("click", ouvrirBanque);
 
+/* ---------------- Mes produits ----------------
+   Une seule liste de produits. Un produit est en vente quand il est placé dans une
+   case du distributeur ; hors distributeur, il reste dans la liste pour plus tard.
+   Chaque case garde une copie de la fiche, plus l'identifiant du produit ("produit"). */
+const CASE_VIDE = { famille: "vide", bio: false, photos: [], nom: "Casier vide", court: "", prix: "", contenance: "", description: "", origine: "", conseils: "" };
+const nouvelIdProduit = nom => (String(nom).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+  .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30) || "produit") + "-" + Math.random().toString(36).slice(2, 6);
+const ficheProduit = p => { const f = { famille: p.famille, bio: !!p.bio, photos: [...(p.photos || [])] }; CHAMPS.forEach(c => f[c] = p[c] || ""); return f; };
+// Une case contient ce produit : par son identifiant, ou (cases d'avant la liste) par son nom et son prix
+const memeProduit = (c, p) => c.produit ? c.produit === p.id
+  : (c.nom || "").trim().toLowerCase() === (p.nom || "").trim().toLowerCase() && (c.prix || "").trim() === (p.prix || "").trim();
+const casiersDe = p => Object.entries(casiers).filter(([, c]) => estRenseigne(c) && memeProduit(c, p)).map(([n]) => Number(n)).sort((a, b) => a - b);
+
+let catalogueProvisoire = null;        // tant que la liste n'a jamais été enregistrée : tirée du distributeur
+function catalogue() {
+  const l = S.lireProduits?.();
+  if (l) return l;
+  if (!catalogueProvisoire) catalogueProvisoire = produitsExistants().map(p => ({ id: nouvelIdProduit(p.nom), ...ficheProduit(p) }));
+  return catalogueProvisoire.map(p => ({ ...p, photos: [...p.photos] }));
+}
+async function enregistrerCatalogue(liste) {
+  // Première fois : on enregistre d'abord la liste telle quelle, pour que le serveur relie les cases
+  // existantes à leur produit avant qu'un nom ou un prix ne change.
+  if (!S.lireProduits() && catalogueProvisoire) await S.enregistrerProduits(catalogueProvisoire);
+  await S.enregistrerProduits(liste);
+  catalogueProvisoire = null;
+}
+const optionsFamillesProduit = sel => familles.map(f => '<option value="' + esc(f.id) + '"' + (sel === f.id ? " selected" : "") + ">" + esc(f.nom) + "</option>").join("");
+const erreurAdmin = e => e.statut === 401 ? "Vous n'êtes plus connecté comme administrateur : reconnectez-vous." : (e.message && e.message !== "Failed to fetch" ? e.message : "Échec de l'enregistrement, réessayez.");
+
+function ouvrirProduits() {
+  ficheContenu.innerHTML =
+    '<div class="fiche-haut"><h3 id="fiche-titre">Mes produits</h3><button class="fermer" aria-label="Fermer">×</button></div>' +
+    '<div class="form-admin">' +
+      '<p class="aide">Tous vos produits. Un produit est en vente quand il est placé dans une case du distributeur.</p>' +
+      '<div class="ajout-photo"><input type="text" id="p-cherche" placeholder="Chercher un produit…" aria-label="Chercher un produit">' +
+        '<button class="btn" type="button" id="p-nouveau">+ Nouveau produit</button></div>' +
+      '<span class="message" id="p-message" aria-live="polite"></span>' +
+      '<div class="liste-produits" id="p-liste"></div>' +
+      '<div class="actions-fiche"><button class="btn clair" type="button" id="p-fermer">Fermer</button></div>' +
+    "</div>";
+  const message = (t, type) => { $("p-message").textContent = t; $("p-message").className = "message " + (type || ""); };
+  function dessiner() {
+    const q = $("p-cherche").value.trim().toLowerCase();
+    const liste = catalogue().filter(p => !q || p.nom.toLowerCase().includes(q))
+      .map(p => ({ p, nos: casiersDe(p) }))
+      .sort((a, b) => (b.nos.length > 0) - (a.nos.length > 0) || a.p.nom.localeCompare(b.p.nom, "fr"));
+    $("p-liste").innerHTML = liste.length ? liste.map(({ p, nos }) =>
+      '<div class="produit-ligne' + (nos.length ? "" : " hors") + '" data-id="' + esc(p.id) + '">' +
+        (p.photos[0] ? '<img src="' + esc(photoUrl(p.photos[0])) + '" alt="" loading="lazy">' : '<div class="sans-photo"></div>') +
+        '<div class="produit-texte"><strong>' + esc(p.nom) + "</strong>" +
+          "<span>" + esc([p.prix, p.contenance, famille(p.famille).nom].filter(Boolean).join(" · ")) + "</span>" +
+          '<span class="statut">' + (nos.length ? "En vente — " + (nos.length > 1 ? "cases " : "case ") + nos.join(", ") : "Hors distributeur") + "</span></div>" +
+        '<div class="produit-actions">' +
+          '<button type="button" data-action="modifier">Modifier</button>' +
+          '<button type="button" data-action="placer">' + (nos.length ? "Ajouter des cases" : "Placer dans le distributeur") + "</button>" +
+          (nos.length ? '<button type="button" data-action="retirer">Retirer du distributeur</button>' : '<button type="button" data-action="supprimer">Supprimer</button>') +
+        "</div>" +
+        '<div class="produit-placer" hidden><input type="text" inputmode="numeric" placeholder="Numéros des cases, ex. 81, 82" aria-label="Numéros des cases">' +
+          '<button type="button" class="btn" data-action="valider">Placer</button></div>' +
+      "</div>").join("")
+      : '<p class="aide">' + (q ? "Aucun produit ne correspond." : "Aucun produit pour l'instant : créez-en un avec « + Nouveau produit ».") + "</p>";
+  }
+  $("p-liste").addEventListener("click", async ev => {
+    const b = ev.target.closest("button[data-action]");
+    if (!b) return;
+    const ligne = b.closest(".produit-ligne"), p = catalogue().find(x => x.id === ligne.dataset.id);
+    if (!p) return;
+    const action = b.dataset.action, nos = casiersDe(p);
+    if (action === "modifier") return ouvrirProduit(p);
+    if (action === "placer") { const z = ligne.querySelector(".produit-placer"); z.hidden = !z.hidden; if (!z.hidden) z.querySelector("input").focus(); return; }
+    try {
+      if (action === "valider") {
+        const existants = new Set(DISPOSITION.flatMap(c => c.nos));
+        const choix = [...new Set(ligne.querySelector(".produit-placer input").value.split(/[\s,;]+/).map(Number).filter(Boolean))];
+        if (!choix.length) return message("Indiquez le numéro d'au moins une case.", "err");
+        const inconnues = choix.filter(n => !existants.has(n));
+        if (inconnues.length) return message("Case(s) inexistante(s) : " + inconnues.join(", "), "err");
+        const occupees = choix.filter(n => estRenseigne(casiers[n]) && !memeProduit(casiers[n], p));
+        if (occupees.length && !confirm("Déjà occupée(s) : " + occupees.map(n => "case " + n + " (" + casiers[n].nom + ")").join(", ") +
+          ".\nLa remplacer par « " + p.nom + " » ?")) return;
+        message("Enregistrement…");
+        if (!S.lireProduits()) await enregistrerCatalogue(catalogue());     // la liste doit exister sur le serveur
+        await S.enregistrerCasiers(choix, { ...ficheProduit(p), produit: p.id });
+        message("« " + p.nom + " » est en vente " + (choix.length > 1 ? "dans les cases " : "dans la case ") + choix.join(", ") + ".", "ok");
+      } else if (action === "retirer") {
+        if (!confirm("Retirer « " + p.nom + " » " + (nos.length > 1 ? "des cases " : "de la case ") + nos.join(", ") + " ?\nLe produit reste dans votre liste.")) return;
+        message("Enregistrement…");
+        if (!S.lireProduits()) await enregistrerCatalogue(catalogue());
+        await S.enregistrerCasiers(nos, CASE_VIDE);
+        message("« " + p.nom + " » est retiré du distributeur.", "ok");
+      } else if (action === "supprimer") {
+        if (!confirm("Supprimer « " + p.nom + " » de votre liste de produits ?")) return;
+        message("Enregistrement…");
+        await enregistrerCatalogue(catalogue().filter(x => x.id !== p.id));
+        message("« " + p.nom + " » est supprimé.", "ok");
+      }
+    } catch (e) { message(erreurAdmin(e), "err"); }
+    dessiner();
+  });
+  $("p-cherche").addEventListener("input", dessiner);
+  $("p-nouveau").addEventListener("click", () => ouvrirProduit(null));
+  ficheContenu.querySelector(".fermer").addEventListener("click", () => fiche.close());
+  $("p-fermer").addEventListener("click", () => fiche.close());
+  dessiner();
+  if (!fiche.open) fiche.showModal();
+}
+document.getElementById("bouton-produits").addEventListener("click", ouvrirProduits);
+
+function ouvrirProduit(p) {
+  const nouveau = !p;
+  p = p || { famille: familles[0]?.id || "", photos: [] };
+  let photos = [...(p.photos || [])];
+  const nos = nouveau ? [] : casiersDe(p);
+  ficheContenu.innerHTML =
+    '<div class="fiche-haut"><h3 id="fiche-titre">' + (nouveau ? "Nouveau produit" : esc(p.nom)) + '</h3><button class="fermer" aria-label="Fermer">×</button></div>' +
+    '<form class="form-admin" id="form-produit">' +
+      (nos.length ? '<p class="aide">En vente dans ' + (nos.length > 1 ? "les cases " : "la case ") + nos.join(", ") + " : les changements s'y appliqueront.</p>" : "") +
+      '<div class="deux">' +
+        '<div><label for="e-nom">Nom du produit</label><input type="text" id="e-nom" maxlength="80" placeholder="ex. Pommes de terre Agata"></div>' +
+        '<div><label for="e-court">Texte sur la vitre <span class="aide">(1 à 3 mots)</span></label><input type="text" id="e-court" maxlength="30" placeholder="ex. Agata"></div>' +
+        '<div><label for="e-prix">Prix</label><input type="text" id="e-prix" maxlength="30" placeholder="ex. 5 €"></div>' +
+        '<div><label for="e-contenance">Poids, contenance</label><input type="text" id="e-contenance" maxlength="40" placeholder="ex. Sac de 5 kg"></div>' +
+        '<div><label for="e-famille">Famille</label><select id="e-famille">' + optionsFamillesProduit(p.famille) + "</select></div>" +
+        '<div><label class="case-a-cocher"><input type="checkbox" id="e-bio"> Produit bio</label></div>' +
+      "</div>" +
+      '<label for="e-description">Description du produit</label><textarea id="e-description" maxlength="1200" placeholder="Variété, goût, utilisation…"></textarea>' +
+      '<label for="e-origine">Origine <span class="aide">(ferme, producteur, lieu)</span></label><input type="text" id="e-origine" maxlength="150">' +
+      '<label for="e-conseils">Conseils, idées recettes, conservation</label><textarea id="e-conseils" maxlength="1200"></textarea>' +
+      '<label>Photos <span class="aide">(' + MAX_PHOTOS + ' maximum, la première est la photo principale)</span></label>' +
+      '<div class="photos-admin" id="photos-admin"></div>' +
+      '<div class="ajout-photo">' +
+        '<label class="btn clair bouton-fichier">Prendre ou ajouter une photo<input type="file" id="e-fichier" accept="image/*" multiple></label>' +
+        '<button type="button" class="btn clair" id="e-banque">Choisir dans la banque de photos</button>' +
+      "</div>" +
+      '<div class="banque choix" id="e-choix-banque" hidden></div>' +
+      '<div class="actions-fiche">' +
+        '<button class="btn" type="submit" id="e-enregistrer">Enregistrer</button>' +
+        '<button class="btn clair" type="button" id="e-retour">Retour à la liste</button>' +
+        '<span class="message" id="e-message" aria-live="polite"></span>' +
+      "</div></form>";
+  const message = (t, type) => { $("e-message").textContent = t; $("e-message").className = "message " + (type || ""); };
+  CHAMPS.forEach(c => $("e-" + c).value = p[c] || "");
+  $("e-bio").checked = !!p.bio;
+  function dessinerPhotos() {
+    $("photos-admin").innerHTML = photos.map((id, i) =>
+      '<div class="photo-admin"><img src="' + esc(photoUrl(id)) + '" alt="Photo ' + (i + 1) + '">' +
+      '<button type="button" class="retirer" data-i="' + i + '" aria-label="Retirer la photo">×</button>' +
+      (i > 0 ? '<button type="button" class="premiere" data-i="' + i + '">Principale</button>' : "") + "</div>").join("");
+    $("photos-admin").querySelectorAll(".retirer").forEach(b => b.addEventListener("click", () => { photos.splice(+b.dataset.i, 1); dessinerPhotos(); }));
+    $("photos-admin").querySelectorAll(".premiere").forEach(b => b.addEventListener("click", () => { const [x] = photos.splice(+b.dataset.i, 1); photos.unshift(x); dessinerPhotos(); }));
+  }
+  dessinerPhotos();
+  $("e-fichier").addEventListener("change", async () => {
+    const fichiers = [...$("e-fichier").files].slice(0, MAX_PHOTOS - photos.length);
+    if (!fichiers.length) { message("Déjà " + MAX_PHOTOS + " photos : retirez-en une d'abord.", "err"); return; }
+    for (const f of fichiers) {
+      message("Envoi de la photo…");
+      try { photos.push(await rangerPhoto(f, $("e-nom").value)); dessinerPhotos(); message("Photo ajoutée : pensez à enregistrer."); }
+      catch (e) { message("La photo n'a pas pu être envoyée.", "err"); break; }
+    }
+    $("e-fichier").value = "";
+  });
+  $("e-banque").addEventListener("click", () => {
+    const zone = $("e-choix-banque");
+    zone.hidden = !zone.hidden;
+    if (zone.hidden) return;
+    const liste = S.lireBanque();
+    zone.innerHTML = liste.map((b, i) =>
+      '<button type="button" data-i="' + i + '"><img src="' + esc(photoUrl(b.id)) + '" alt="" loading="lazy"><span>' + esc(b.nom) + "</span></button>").join("");
+    zone.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+      if (photos.length >= MAX_PHOTOS) { message("Déjà " + MAX_PHOTOS + " photos : retirez-en une d'abord.", "err"); return; }
+      const id = liste[+b.dataset.i].id;
+      if (!photos.includes(id)) photos.push(id);
+      dessinerPhotos(); zone.hidden = true; message("Photo ajoutée : pensez à enregistrer.");
+    }));
+  });
+  ficheContenu.querySelector(".fermer").addEventListener("click", () => fiche.close());
+  $("e-retour").addEventListener("click", ouvrirProduits);
+  $("form-produit").addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const f = { id: nouveau ? nouvelIdProduit($("e-nom").value) : p.id, famille: $("e-famille").value, bio: $("e-bio").checked, photos: photos.slice(0, MAX_PHOTOS) };
+    CHAMPS.forEach(c => f[c] = $("e-" + c).value.trim());
+    if (!f.nom) { message("Indiquez le nom du produit.", "err"); return; }
+    const liste = catalogue(), i = liste.findIndex(x => x.id === f.id);
+    if (i >= 0) liste[i] = f; else liste.push(f);
+    $("e-enregistrer").disabled = true; message("Enregistrement…");
+    try {
+      await enregistrerCatalogue(liste);
+      message(nos.length ? "Enregistré, et mis à jour dans " + (nos.length > 1 ? "les cases " : "la case ") + nos.join(", ") + "." : "Enregistré dans votre liste.", "ok");
+      setTimeout(ouvrirProduits, 900);
+    } catch (e) { message(erreurAdmin(e), "err"); }
+    finally { $("e-enregistrer").disabled = false; }
+  });
+  if (!fiche.open) fiche.showModal();
+  if (nouveau) $("e-nom").focus();
+}
+
 /* ---------------- Vues ---------------- */
 function choisirVue(v) {
   document.querySelectorAll(".vue").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.vue === v)));
@@ -1322,7 +1547,8 @@ toutDessiner();
 (async () => {
   S = await stockageClaude() || await stockageServeur() || stockageSimulation();
   estAdmin = S.admin;
-  $("bouton-banque").hidden = !S.enregistrerBanque;     // la banque a besoin du serveur Cloudflare
+  $("bouton-banque").hidden = !S.enregistrerBanque;     // la banque et la liste de produits ont besoin du serveur Cloudflare
+  $("bouton-produits").hidden = !S.enregistrerProduits;
   if (S.nom === "claude") $("bandeau-admin").hidden = !estAdmin;
   else preparerConnexion();
   S.abonner(

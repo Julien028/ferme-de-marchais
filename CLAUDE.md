@@ -37,6 +37,16 @@ Ce site n'est pas fait comme les autres applis (voir `../LISEZ-MOI-applications.
 - Le contenu modifié dans l'administration vit dans Cloudflare KV, pas dans ces fichiers :
   `depart.json` n'est que le contenu de départ.
 
+## Mes produits
+
+- Décision de Julien (08/10/2026) : une seule liste de produits. Un produit est « en vente »
+  uniquement quand il est placé dans une case ; pas d'interrupteur à part.
+- Liste `produits` du contenu KV (`[{ id, nom, prix, …, photos }]`), modifiée par
+  `PUT /api/produits`. Chaque case garde une copie de la fiche + `produit` (l'identifiant) ;
+  à chaque enregistrement de la liste, le serveur recopie la fiche dans les cases liées et
+  relie les cases d'avant la liste par nom + prix.
+- Tant que la liste n'a jamais été enregistrée, le site la tire des cases (`catalogue()`).
+
 ## Banque de photos et affiches
 
 - La banque de photos est la liste `banque` du contenu KV (`[{ id, nom }]`), modifiée par

@@ -104,6 +104,37 @@ async function api(request, env, url) {
     return json({ ok: true });
   }
 
+  // Liste des produits. Un produit est "en vente" quand une case du distributeur le contient.
+  // Après l'enregistrement, chaque case liée à un produit reprend sa fiche (nom, prix, photos…),
+  // pour qu'un changement fait dans la liste s'applique à toutes ses cases.
+  if (chemin === "/api/produits" && methode === "PUT") {
+    const { liste } = await request.json();
+    if (!Array.isArray(liste) || liste.length > 500) return json({ erreur: "Données invalides." }, 400);
+    const donnees = await lireContenu(env, url);
+    const vus = new Set(), produits = [];
+    for (const p of liste) {
+      const id = String(p?.id || "");
+      if (!ID_PRODUIT.test(id) || vus.has(id)) continue;
+      const propre = nettoyerCasier({ ...p, produit: "" }, donnees.familles);
+      if (!propre || propre.famille === "vide") continue;
+      delete propre.produit;
+      vus.add(id); produits.push({ id, ...propre });
+    }
+    donnees.produits = produits;
+    const parId = new Map(produits.map(p => [p.id, p]));
+    const cle = p => (p.nom || "").trim().toLowerCase() + "|" + (p.prix || "").trim();
+    const parNom = new Map(produits.map(p => [cle(p), p]));
+    for (const [no, c] of Object.entries(donnees.casiers)) {
+      if (!c || c.famille === "vide") continue;
+      // case déjà liée, ou case d'avant la liste reconnue par son nom et son prix
+      const p = c.produit ? parId.get(c.produit) : parNom.get(cle(c));
+      if (p) { const { id, ...fiche } = p; donnees.casiers[no] = { no: Number(no), ...fiche, produit: id }; }
+      else if (c.produit) delete c.produit;      // produit supprimé de la liste : la case garde sa fiche
+    }
+    await env.DISTRIBUTEUR.put(CLE_CONTENU, JSON.stringify(donnees));
+    return json({ ok: true, contenu: donnees });
+  }
+
   // Banque de photos : la liste des photos rangées (distributeur, ferme, produits…), avec un nom.
   // Les photos elles-mêmes restent dans KV ("photo:…") ; seule la liste change ici.
   if (chemin === "/api/banque" && methode === "PUT") {
@@ -139,6 +170,8 @@ async function lireContenu(env, url) {
   return await r.json();
 }
 
+const ID_PRODUIT = /^[a-z0-9-]{1,40}$/;
+
 // Une photo envoyée depuis l'administration, ou une photo livrée avec le site (dossier photos/)
 const estPhotoValide = p => typeof p === "string" &&
   (/^\/api\/photos\/[a-f0-9]{24}$/.test(p) || /^photos\/[\w.-]+\.(jpg|jpeg|png|webp)$/.test(p));
@@ -149,7 +182,8 @@ function nettoyerCasier(c, familles) {
   const propre = { famille, bio: !!c.bio };
   for (const [champ, max] of Object.entries(LONGUEURS)) propre[champ] = String(c[champ] ?? "").trim().slice(0, max);
   propre.photos = (Array.isArray(c.photos) ? c.photos : []).slice(0, 4).filter(estPhotoValide);
-  if (famille === "vide") Object.assign(propre, { nom: "Casier vide", court: "", prix: "", contenance: "", description: "", origine: "", conseils: "", bio: false, photos: [] });
+  if (ID_PRODUIT.test(String(c.produit || ""))) propre.produit = String(c.produit);   // produit de la liste
+  if (famille === "vide") Object.assign(propre, { nom: "Casier vide", court: "", prix: "", contenance: "", description: "", origine: "", conseils: "", bio: false, photos: [] }), delete propre.produit;
   else if (!propre.nom) return null;
   return propre;
 }
