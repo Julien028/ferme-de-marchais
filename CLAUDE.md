@@ -37,6 +37,18 @@ Ce site n'est pas fait comme les autres applis (voir `../LISEZ-MOI-applications.
 - Le contenu modifié dans l'administration vit dans Cloudflare KV, pas dans ces fichiers :
   `depart.json` n'est que le contenu de départ.
 
+## Banque de photos et affiches
+
+- La banque de photos est la liste `banque` du contenu KV (`[{ id, nom }]`), modifiée par
+  `PUT /api/banque` (administrateur). Les photos elles-mêmes restent dans KV (`photo:…`)
+  ou dans `public/photos/`. Tant qu'elle n'existe pas, le site propose `BANQUE_DEPART`
+  (les 4 photos du site). Toute photo ajoutée à une fiche produit y est aussi rangée.
+- `affiche.html` fabrique l'affiche A4 ou les flyers A5/A6 à partir de la banque.
+  Le QR code part de `location.origin` : Cloudflare raccourcit `/affiche.html` en `/affiche`.
+- Essai en local avec stockage et mot de passe d'essai : configuration
+  `ferme-de-marchais-admin` dans `Site-ferme/.claude/launch.json` (port 8790, mot de passe
+  d'essai indiqué dans cette configuration, données dans `.wrangler/essai`, non versionné).
+
 ## Règles à ne pas perdre en chemin
 
 - L'adresse du site ne doit pas changer : elle est sur l'affiche et le QR code.

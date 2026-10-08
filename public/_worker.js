@@ -104,6 +104,20 @@ async function api(request, env, url) {
     return json({ ok: true });
   }
 
+  // Banque de photos : la liste des photos rangées (distributeur, ferme, produits…), avec un nom.
+  // Les photos elles-mêmes restent dans KV ("photo:…") ; seule la liste change ici.
+  if (chemin === "/api/banque" && methode === "PUT") {
+    const { liste } = await request.json();
+    if (!Array.isArray(liste) || liste.length > 300) return json({ erreur: "Données invalides." }, 400);
+    const vues = new Set();
+    const propres = liste.map(p => ({ id: String(p?.id || ""), nom: String(p?.nom ?? "").trim().slice(0, 60) }))
+      .filter(p => estPhotoValide(p.id) && !vues.has(p.id) && vues.add(p.id));
+    const donnees = await lireContenu(env, url);
+    donnees.banque = propres;
+    await env.DISTRIBUTEUR.put(CLE_CONTENU, JSON.stringify(donnees));
+    return json({ ok: true });
+  }
+
   if (chemin === "/api/photos" && methode === "POST") {
     const type = (request.headers.get("Content-Type") || "").split(";")[0];
     if (!TYPES_PHOTO.includes(type)) return json({ erreur: "Format accepté : JPEG, PNG ou WebP." }, 400);
@@ -125,13 +139,16 @@ async function lireContenu(env, url) {
   return await r.json();
 }
 
+// Une photo envoyée depuis l'administration, ou une photo livrée avec le site (dossier photos/)
+const estPhotoValide = p => typeof p === "string" &&
+  (/^\/api\/photos\/[a-f0-9]{24}$/.test(p) || /^photos\/[\w.-]+\.(jpg|jpeg|png|webp)$/.test(p));
+
 function nettoyerCasier(c, familles) {
   const famille = String(c.famille || "");
   if (famille !== "vide" && !familles.some(f => f.id === famille)) return null;
   const propre = { famille, bio: !!c.bio };
   for (const [champ, max] of Object.entries(LONGUEURS)) propre[champ] = String(c[champ] ?? "").trim().slice(0, max);
-  propre.photos = (Array.isArray(c.photos) ? c.photos : []).slice(0, 4)
-    .filter(p => typeof p === "string" && (/^\/api\/photos\/[a-f0-9]{24}$/.test(p) || /^photos\/[\w.-]+\.(jpg|jpeg|png|webp)$/.test(p)));
+  propre.photos = (Array.isArray(c.photos) ? c.photos : []).slice(0, 4).filter(estPhotoValide);
   if (famille === "vide") Object.assign(propre, { nom: "Casier vide", court: "", prix: "", contenance: "", description: "", origine: "", conseils: "", bio: false, photos: [] });
   else if (!propre.nom) return null;
   return propre;

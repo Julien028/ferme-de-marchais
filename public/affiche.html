@@ -4,94 +4,270 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Affiche QR code – Distributeur</title>
+<title>Affiches et flyers – Distributeur</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700&family=Karla:wght@400;600&display=swap" rel="stylesheet">
 <script src="qrcode.js"></script>
 <style>
-  :root { --vert: #2f7a3a; --ardoise: #343b44; --inox: #e3e7ea; --inox-bord: #b9c1c7; --patate: #e9c46a;
+  :root { --vert: #2f7a3a; --ardoise: #343b44; --inox: #e3e7ea; --patate: #e9c46a;
           --police-titre: "Zilla Slab", Rockwell, Georgia, serif; --police-texte: "Karla", "Segoe UI", Arial, sans-serif; }
   * { box-sizing: border-box; }
   body { margin: 0; background: #d9dee2; font-family: var(--police-texte); color: #22272d; }
-  .reglages { background: var(--ardoise); color: #fff; padding: 1rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; }
-  .reglages label { display: block; font-weight: 600; font-size: .9rem; margin-bottom: .25rem; }
-  .reglages input { font: inherit; padding: .5rem .6rem; border-radius: 6px; border: 0; width: min(28rem, 80vw); }
-  .reglages a, .reglages button { font: inherit; font-weight: 600; padding: .55rem 1rem; border-radius: 6px; border: 2px solid #fff; background: none; color: #fff; cursor: pointer; text-decoration: none; }
-  .reglages button.principal { background: var(--patate); border-color: var(--patate); color: var(--ardoise); }
 
-  /* La feuille A4 */
-  .feuille {
-    width: 210mm; height: 297mm; margin: 1.5rem auto; background: #fff;
-    display: flex; flex-direction: column; align-items: center; text-align: center;
-    padding: 18mm 16mm; box-shadow: 0 6px 24px rgba(0,0,0,.2);
-  }
-  .bandeau { width: 100%; background: var(--vert); color: #fff; border-radius: 6mm; padding: 9mm 8mm; }
-  .bandeau h1 { font-family: var(--police-titre); font-size: 34pt; margin: 0 0 3mm; line-height: 1.05; }
-  .bandeau p { font-size: 15pt; margin: 0; }
-  .qr { margin: 12mm 0 8mm; padding: 14mm;  /* marge blanche autour du code : nécessaire pour une lecture fiable */ border: 2.5mm solid var(--ardoise); border-radius: 5mm; }
-  .qr svg { display: block; width: 100mm; height: 100mm; }
-  .appel { font-family: var(--police-titre); font-size: 24pt; font-weight: 700; color: var(--ardoise); margin: 0 0 3mm; }
-  .sous { font-size: 14pt; margin: 0; color: #56606b; }
-  .adresse { margin-top: auto; font-size: 13pt; color: #56606b; word-break: break-all; }
-  .pied { margin-top: 5mm; display: flex; gap: 8mm; justify-content: center; font-size: 13pt; font-weight: 600; color: var(--ardoise); }
-  .pied span { background: var(--inox); border-radius: 999px; padding: 2mm 6mm; }
+  /* ---------- Réglages (n'apparaissent pas à l'impression) ---------- */
+  .reglages { background: var(--ardoise); color: #fff; padding: 1rem; }
+  .reglages h1 { font-family: var(--police-titre); font-size: 1.4rem; margin: 0 0 .8rem; }
+  .ligne { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; margin-bottom: 1rem; }
+  .reglages label, .reglages .titre-champ { display: block; font-weight: 600; font-size: .9rem; margin-bottom: .3rem; }
+  .reglages input[type=text] { font: inherit; padding: .5rem .6rem; border-radius: 6px; border: 0; width: min(24rem, 86vw); }
+  .formats { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .formats label { margin: 0; background: rgba(255,255,255,.1); padding: .5rem .8rem; border-radius: 6px; cursor: pointer; font-weight: 600; }
+  .formats input { margin-right: .4rem; }
+  .formats label:has(input:checked) { background: var(--patate); color: var(--ardoise); }
+  .galerie { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .4rem; }
+  .galerie button { flex: 0 0 auto; width: 6.5rem; padding: 0; border: 3px solid transparent; border-radius: 8px;
+                    background: #262b31; color: #fff; cursor: pointer; font: inherit; font-size: .75rem; overflow: hidden; }
+  .galerie button[aria-pressed=true] { border-color: var(--patate); }
+  .galerie img { display: block; width: 100%; height: 4.5rem; object-fit: cover; }
+  .galerie .sans { height: 4.5rem; display: grid; place-items: center; font-size: .9rem; }
+  .galerie span { display: block; padding: .25rem .3rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .boutons { display: flex; flex-wrap: wrap; gap: .6rem; }
+  .boutons a, .boutons button { font: inherit; font-weight: 600; padding: .6rem 1rem; border-radius: 6px; border: 2px solid #fff;
+                                background: none; color: #fff; cursor: pointer; text-decoration: none; }
+  .boutons button.principal { background: var(--patate); border-color: var(--patate); color: var(--ardoise); }
+  .aide { font-size: .85rem; opacity: .8; margin: .4rem 0 0; }
+
+  /* ---------- La feuille et les cartes ---------- */
+  .apercu { overflow-x: auto; padding: 1.5rem 0; }
+  .feuille { margin: 0 auto; background: #fff; box-shadow: 0 6px 24px rgba(0,0,0,.2); display: grid; }
+  .feuille.a4 { width: 210mm; height: 297mm; grid-template: 1fr / 1fr; }
+  .feuille.a5 { width: 297mm; height: 210mm; grid-template: 1fr / 1fr 1fr; }      /* 2 flyers A5 sur une feuille A4 couchée */
+  .feuille.a6 { width: 210mm; height: 297mm; grid-template: 1fr 1fr / 1fr 1fr; }  /* 4 flyers A6 sur une feuille A4 */
+  .feuille.a5 .carte + .carte { border-left: .3mm dashed #b9c1c7; }                /* traits de coupe */
+  .feuille.a6 .carte:nth-child(even) { border-left: .3mm dashed #b9c1c7; }
+  .feuille.a6 .carte:nth-child(n+3) { border-top: .3mm dashed #b9c1c7; }
+
+  /* Tout est mesuré en "em" : la taille du texte de la carte fait grandir ou rétrécir l'ensemble. */
+  .carte { font-size: 3.1mm; padding: 1.6em; display: flex; flex-direction: column; overflow: hidden; text-align: center; }
+  .a5 .carte { font-size: 4.3mm; }
+  .a4 .carte { font-size: 5.6mm; padding: 2.2em; }
+  .photo { flex: 0 0 38%; border-radius: .8em .8em 0 0; background: #ccc center / cover no-repeat; }
+  .bandeau { background: var(--vert); color: #fff; padding: .9em 1em; border-radius: .8em; display: flex; align-items: center; gap: .8em; text-align: left; }
+  .photo + .bandeau { border-radius: 0 0 .8em .8em; }
+  .bandeau svg { height: 3.4em; width: auto; flex-shrink: 0; }
+  .bandeau h2 { font-family: var(--police-titre); font-size: 2em; line-height: 1.05; margin: 0; }
+  .bandeau p { margin: .25em 0 0; font-size: 1.05em; }
+  .milieu { flex: 1; display: flex; align-items: center; justify-content: center; gap: 1.2em; margin: 1em 0; min-height: 0; }
+  .qr { background: #fff; padding: .9em; border: .3em solid var(--ardoise); border-radius: .7em; flex-shrink: 0; }
+  .qr svg { display: block; width: 8.5em; height: 8.5em; }
+  .sans-photo .qr svg { width: 11em; height: 11em; }
+  .a4 .qr svg { width: 13em; height: 13em; }              /* affiche : QR code lisible de plus loin */
+  .a4.sans-photo .qr svg, .a4 .sans-photo .qr svg { width: 17em; height: 17em; }
+  .appel { text-align: left; max-width: 13em; }
+  .appel strong { display: block; font-family: var(--police-titre); font-size: 1.5em; line-height: 1.1; color: var(--ardoise); }
+  .appel span { display: block; margin-top: .4em; color: #56606b; }
+  .pied { display: flex; flex-wrap: wrap; gap: .5em; justify-content: center; font-weight: 600; color: var(--ardoise); }
+  .pied span { background: var(--inox); border-radius: 999px; padding: .3em .9em; }
+  .adresse { margin: .6em 0 0; color: #56606b; font-size: .95em; }
+  .site { margin: .2em 0 0; color: #56606b; font-size: .9em; word-break: break-all; }
 
   @media print {
-    @page { size: A4; margin: 0; }
     body { background: #fff; }
     .reglages { display: none; }
-    .feuille { margin: 0; box-shadow: none; }
+    .apercu { padding: 0; overflow: visible; }
+    .feuille { box-shadow: none; margin: 0; }
   }
-  @media screen and (max-width: 900px) { .feuille { transform: scale(.45); transform-origin: top center; margin-bottom: -150mm; } }
+  @media screen and (max-width: 900px) { .feuille { zoom: .42; } }
 </style>
+<style id="style-page">@page { size: A4 portrait; margin: 0; }</style>
 </head>
 <body>
   <div class="reglages">
-    <div>
-      <label for="lien">Adresse vers laquelle mène le QR code</label>
-      <input id="lien">
+    <h1>Affiches et flyers</h1>
+
+    <div class="ligne">
+      <div>
+        <span class="titre-champ">Format</span>
+        <div class="formats">
+          <label><input type="radio" name="format" value="a4" checked>Affiche A4</label>
+          <label><input type="radio" name="format" value="a5">2 flyers A5 par feuille</label>
+          <label><input type="radio" name="format" value="a6">4 flyers A6 par feuille</label>
+        </div>
+      </div>
     </div>
-    <button class="principal" id="imprimer" type="button">Imprimer l'affiche</button>
-    <button id="telecharger" type="button">Télécharger le QR code seul</button>
-    <a href="./">Retour au site</a>
+
+    <div class="ligne">
+      <div style="max-width:100%">
+        <span class="titre-champ">Photo <span style="font-weight:400;opacity:.8">— pour en ajouter : sur le site, en mode administrateur, bouton « Banque de photos »</span></span>
+        <div class="galerie" id="galerie"></div>
+      </div>
+    </div>
+
+    <div class="ligne">
+      <div><label for="t-titre">Titre</label><input type="text" id="t-titre"></div>
+      <div><label for="t-sous">Sous-titre</label><input type="text" id="t-sous"></div>
+      <div><label for="t-appel">Phrase à côté du QR code</label><input type="text" id="t-appel"></div>
+    </div>
+
+    <div class="ligne">
+      <div>
+        <label for="lien">Adresse vers laquelle mène le QR code</label>
+        <input type="text" id="lien">
+      </div>
+    </div>
+
+    <div class="boutons">
+      <button class="principal" id="imprimer" type="button">Imprimer</button>
+      <button id="telecharger" type="button">Télécharger le QR code seul</button>
+      <a href="./">Retour au site</a>
+    </div>
+    <p class="aide">À l'impression, choisissez « Aucune marge » ou « Marges : aucune » si votre imprimante le propose, et cochez « Graphiques d'arrière-plan » pour garder les couleurs.</p>
   </div>
 
-  <div class="feuille">
-    <div class="bandeau">
-      <h1>Ferme de Marchais</h1>
-      <p>Les produits de la ferme, en libre-service</p>
+  <div class="apercu"><div class="feuille a4" id="feuille"></div></div>
+
+  <template id="modele">
+    <div class="carte">
+      <div class="photo"></div>
+      <div class="bandeau">
+        <svg viewBox="10 0 54 48" aria-hidden="true">
+          <g transform="translate(9 1) rotate(-18 23 30)">
+            <path d="M4 30C4 23.5 8.5 20.5 14 20.5C21 20.5 27 24 34 24.8C39 25.3 42 27 42 30C42 33 39 34.7 34 35.2C27 36 21 39.5 14 39.5C8.5 39.5 4 36.5 4 30Z" fill="#d4a95f" stroke="#8a6326" stroke-width="1.6"/>
+            <path d="M8 26C10 23.5 13 22.8 16 23" fill="none" stroke="#ecd09a" stroke-width="1.5" stroke-linecap="round"/>
+            <g fill="#8a6326"><circle cx="11" cy="32.5" r="1.1"/><circle cx="20" cy="27.5" r="1.1"/><circle cx="29" cy="32.5" r="1"/><circle cx="37" cy="29" r="0.9"/></g>
+          </g>
+          <g fill="none" stroke="#8fbf6a" stroke-width="1.5" stroke-linecap="round"><path d="M50 45Q47 26 44 6"/><path d="M51 45Q52 24 52 3"/><path d="M52 45Q56 27 60 9"/></g>
+          <g fill="#a98ae0">
+            <ellipse cx="44.2" cy="6" rx="1.4" ry="2.2"/>
+            <ellipse cx="43.2" cy="10.5" rx="1.4" ry="2.2" transform="rotate(-25 43.2 10.5)"/><ellipse cx="46.4" cy="10.5" rx="1.4" ry="2.2" transform="rotate(25 46.4 10.5)"/>
+            <ellipse cx="43.8" cy="14.5" rx="1.4" ry="2.2" transform="rotate(-25 43.8 14.5)"/><ellipse cx="47" cy="14.5" rx="1.4" ry="2.2" transform="rotate(25 47 14.5)"/>
+            <ellipse cx="44.4" cy="18.5" rx="1.3" ry="2" transform="rotate(-25 44.4 18.5)"/><ellipse cx="47.6" cy="18.5" rx="1.3" ry="2" transform="rotate(25 47.6 18.5)"/>
+            <ellipse cx="52" cy="3" rx="1.4" ry="2.2"/>
+            <ellipse cx="50.4" cy="7.5" rx="1.4" ry="2.2" transform="rotate(-25 50.4 7.5)"/><ellipse cx="53.6" cy="7.5" rx="1.4" ry="2.2" transform="rotate(25 53.6 7.5)"/>
+            <ellipse cx="50.4" cy="11.5" rx="1.4" ry="2.2" transform="rotate(-25 50.4 11.5)"/><ellipse cx="53.6" cy="11.5" rx="1.4" ry="2.2" transform="rotate(25 53.6 11.5)"/>
+            <ellipse cx="50.4" cy="15.5" rx="1.3" ry="2" transform="rotate(-25 50.4 15.5)"/><ellipse cx="53.6" cy="15.5" rx="1.3" ry="2" transform="rotate(25 53.6 15.5)"/>
+            <ellipse cx="59.8" cy="9" rx="1.4" ry="2.2" transform="rotate(25 59.8 9)"/>
+            <ellipse cx="57.6" cy="13" rx="1.4" ry="2.2" transform="rotate(-5 57.6 13)"/><ellipse cx="60.6" cy="14" rx="1.4" ry="2.2" transform="rotate(45 60.6 14)"/>
+            <ellipse cx="56.6" cy="17" rx="1.3" ry="2" transform="rotate(-5 56.6 17)"/><ellipse cx="59.6" cy="18" rx="1.3" ry="2" transform="rotate(45 59.6 18)"/>
+          </g>
+          <g fill="#8a6bc9"><ellipse cx="45" cy="22.5" rx="1.1" ry="1.7"/><ellipse cx="52" cy="19.5" rx="1.1" ry="1.7"/><ellipse cx="57.4" cy="21.5" rx="1.1" ry="1.7" transform="rotate(20 57.4 21.5)"/></g>
+          <rect x="47.5" y="34" width="8" height="3.2" rx="1.2" fill="#e8c46a"/>
+        </svg>
+        <div><h2 class="c-titre"></h2><p class="c-sous"></p></div>
+      </div>
+      <div class="milieu">
+        <div class="qr"></div>
+        <p class="appel"><strong class="c-appel"></strong><span>Produits, prix et numéros des casiers, sur votre téléphone</span></p>
+      </div>
+      <div class="pied"><span class="c-horaires"></span><span>Carte bancaire, avec ou sans contact</span></div>
+      <p class="adresse c-adresse"></p>
+      <p class="site c-site"></p>
     </div>
-    <div class="qr" id="qr"></div>
-    <p class="appel">Scannez pour voir tout le distributeur</p>
-    <p class="sous">Produits, prix et numéros des casiers, sur votre téléphone</p>
-    <p class="adresse" id="adresse-texte"></p>
-    <div class="pied"><span>Ouvert 24h/24</span><span>Carte bancaire, avec ou sans contact</span></div>
-  </div>
+  </template>
 
 <script>
-  // Par défaut, le QR code mène à la partie "produits" de ce site (même adresse que l'administration, sans /admin/).
-  const racine = location.href.replace(/affiche\.html.*$/, "");  // adresse du site (sans /admin/)
-  const champLien = document.getElementById("lien");
-  champLien.value = racine + "#produits";
+  const $ = id => document.getElementById(id);
 
-  function fabriquer() {
-    const lien = champLien.value.trim();
-    const qr = qrcode(0, "M");          // taille automatique, correction d'erreur moyenne
-    qr.addData(lien);
+  // Le QR code mène à la liste des produits du site. On part de la racine du site
+  // (location.origin), pas de l'adresse de cette page : Cloudflare la raccourcit en
+  // ".../affiche", et l'ancien calcul envoyait le QR code vers l'affiche elle-même.
+  $("lien").value = location.origin + "/#produits";
+
+  // Photos proposées : celles du site, puis celles des produits du distributeur.
+  const PHOTOS_SITE = [
+    { src: "photos/distributeur-container.jpg", nom: "Le distributeur" },
+    { src: "photos/distributeur-hangar.jpg", nom: "Devant le hangar" },
+    { src: "photos/distributeur-casiers.jpg", nom: "Les casiers" },
+    { src: "photos/panneau-marchais.png", nom: "Le panneau de la ferme" }
+  ];
+  let photos = [...PHOTOS_SITE], photoChoisie = PHOTOS_SITE[0].src;
+  let infos = { nom: "Ferme de Marchais", titre: "Les produits de la ferme, en libre-service",
+                horaires: "7j/7, 24h/24", adresse: "Ferme de Marchais, route de Videlles 91820 Boutigny-sur-Essonne" };
+
+  const photoUrl = id => /^(https?:|\/|photos\/)/.test(id) ? id : "/api/photos/" + id;
+
+  function remplirGalerie() {
+    const g = $("galerie");
+    g.innerHTML = "";
+    [...photos, { src: "", nom: "Sans photo" }].forEach(p => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(p.src === photoChoisie));
+      b.innerHTML = (p.src ? '<img alt="" loading="lazy">' : '<div class="sans">Aucune</div>') + "<span></span>";
+      if (p.src) b.querySelector("img").src = p.src;
+      b.querySelector("span").textContent = p.nom;
+      b.title = p.nom;
+      b.addEventListener("click", () => { photoChoisie = p.src; remplirGalerie(); dessiner(); });
+      g.appendChild(b);
+    });
+  }
+
+  function format() { return document.querySelector("input[name=format]:checked").value; }
+
+  function fabriquerQr() {
+    const qr = qrcode(0, "M");           // taille automatique, correction d'erreur moyenne
+    qr.addData($("lien").value.trim());
     qr.make();
-    document.getElementById("qr").innerHTML = qr.createSvgTag({ cellSize: 8, margin: 0, scalable: true });
-    document.getElementById("adresse-texte").textContent = lien.replace(/^https?:\/\//, "").replace(/#.*$/, "").replace(/\/$/, "");
     return qr;
   }
-  champLien.addEventListener("input", fabriquer);
-  fabriquer();
 
-  document.getElementById("imprimer").addEventListener("click", () => window.print());
+  function dessiner() {
+    const f = format(), nb = { a4: 1, a5: 2, a6: 4 }[f];
+    $("style-page").textContent = "@page { size: A4 " + (f === "a5" ? "landscape" : "portrait") + "; margin: 0; }";
+    const feuille = $("feuille");
+    feuille.className = "feuille " + f;
+    feuille.innerHTML = "";
+    const svgQr = fabriquerQr().createSvgTag({ cellSize: 8, margin: 0, scalable: true });
+    const lien = $("lien").value.trim();
+    for (let i = 0; i < nb; i++) {
+      const c = $("modele").content.firstElementChild.cloneNode(true);
+      const photo = c.querySelector(".photo");
+      if (photoChoisie) photo.style.backgroundImage = 'url("' + photoChoisie.replace(/"/g, "%22") + '")';
+      else { photo.remove(); c.classList.add("sans-photo"); }
+      c.querySelector(".c-titre").textContent = $("t-titre").value;
+      c.querySelector(".c-sous").textContent = $("t-sous").value;
+      c.querySelector(".c-appel").textContent = $("t-appel").value;
+      c.querySelector(".c-horaires").textContent = "Ouvert " + (infos.horaires || "24h/24");
+      c.querySelector(".c-adresse").textContent = infos.adresse || "";
+      c.querySelector(".c-site").textContent = lien.replace(/^https?:\/\//, "").replace(/#.*$/, "").replace(/\/$/, "");
+      c.querySelector(".qr").innerHTML = svgQr;
+      feuille.appendChild(c);
+    }
+  }
+
+  async function charger() {
+    // Textes et photos enregistrés dans l'administration (si le serveur répond).
+    try {
+      const r = await fetch("/api/contenu", { cache: "no-store" });
+      if (r.ok) {
+        const d = await r.json();
+        infos = { ...infos, ...Object.fromEntries(Object.entries(d.infos || {}).filter(([, v]) => String(v).trim())) };
+        // La banque de photos rangée dans l'administration, puis les photos des produits
+        if (Array.isArray(d.banque)) photos = d.banque.map(p => ({ src: photoUrl(p.id), nom: p.nom || "Photo" }));
+        if (!photos.some(p => p.src === photoChoisie)) photoChoisie = photos[0]?.src || "";
+        const vues = new Set(photos.map(p => p.src));
+        Object.values(d.casiers || {}).forEach(c => (c.photos || []).forEach(id => {
+          const src = photoUrl(id);
+          if (!vues.has(src) && (c.nom || "").trim()) { vues.add(src); photos.push({ src, nom: c.nom.trim() }); }
+        }));
+      }
+    } catch (e) { /* hors ligne : on garde les photos du site */ }
+    $("t-titre").value = infos.nom;
+    $("t-sous").value = infos.titre;
+    $("t-appel").value = "Scannez pour voir tout le distributeur";
+    remplirGalerie();
+    dessiner();
+  }
+
+  document.querySelectorAll("input[name=format]").forEach(r => r.addEventListener("change", dessiner));
+  ["t-titre", "t-sous", "t-appel", "lien"].forEach(id => $(id).addEventListener("input", dessiner));
+  $("imprimer").addEventListener("click", () => window.print());
 
   // Télécharge le QR code en image PNG haute définition (pour un autocollant, une étiquette, Facebook…)
-  document.getElementById("telecharger").addEventListener("click", () => {
-    const qr = fabriquer(), n = qr.getModuleCount(), taille = 40, marge = 4;
+  $("telecharger").addEventListener("click", () => {
+    const qr = fabriquerQr(), n = qr.getModuleCount(), taille = 40, marge = 4;
     const c = document.createElement("canvas");
     c.width = c.height = (n + marge * 2) * taille;
     const ctx = c.getContext("2d");
@@ -104,6 +280,8 @@
     a.href = c.toDataURL("image/png");
     a.click();
   });
+
+  charger();
 </script>
 </body>
 </html>
