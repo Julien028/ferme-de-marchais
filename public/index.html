@@ -63,9 +63,7 @@
 }
 </script>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700&family=Karla:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/polices/polices.css">
 
 <style>
   /* ---------- 1. Les couleurs du site ----------
@@ -341,6 +339,10 @@
   /* ---------- Carte et panneau ---------- */
   .carte { margin-top: 2.5rem; border: 3px solid var(--inox-bord); border-radius: 6px; overflow: hidden; background: var(--inox); }
   .carte iframe { display: block; width: 100%; height: clamp(18rem, 45vw, 26rem); border: 0; }
+  .carte-attente { display: grid; place-items: center; align-content: center; gap: .8rem; text-align: center; padding: 1.5rem;
+                   min-height: clamp(12rem, 30vw, 16rem); background: var(--inox) url("photos/distributeur-container.jpg") center / cover; position: relative; }
+  .carte-attente::before { content: ""; position: absolute; inset: 0; background: rgba(251, 250, 247, .86); }
+  .carte-attente > * { position: relative; margin: 0; max-width: 28rem; }
   .panneau { margin-top: 1rem; width: 100%; max-width: 320px; border-radius: 4px; border: 4px solid #fff; }
 
   .bouton-avis-plein { background: var(--ardoise); color: #fff; }
@@ -671,7 +673,11 @@
     </div>
 
     <div class="carte" id="carte-simulation" hidden>
-      <iframe src="https://www.google.com/maps?q=48.4445002,2.3921995&z=16&output=embed" title="Carte : emplacement du distributeur" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+      <!-- La carte Google n'est chargée qu'au clic : avant, rien n'est envoyé à Google (pas de cookie, pas de bandeau à afficher). -->
+      <div class="carte-attente" id="carte-attente">
+        <p>La carte est fournie par Google Maps. En l'affichant, Google peut déposer des cookies.</p>
+        <button class="btn" type="button" id="afficher-carte">Afficher la carte</button>
+      </div>
     </div>
     <figure class="lieu">
       <img src="photos/distributeur-hangar.jpg" alt="Le container du distributeur, devant le grand hangar de la ferme" loading="lazy">
@@ -1239,6 +1245,16 @@ function ouvrirInfos() {
   if (!fiche.open) fiche.showModal();
 }
 document.getElementById("bouton-infos").addEventListener("click", ouvrirInfos);
+
+// Carte Google chargée seulement si le visiteur la demande
+document.getElementById("afficher-carte").addEventListener("click", () => {
+  const carte = document.createElement("iframe");
+  carte.src = "https://www.google.com/maps?q=48.4445002,2.3921995&z=16&output=embed";
+  carte.title = "Carte : emplacement du distributeur";
+  carte.referrerPolicy = "no-referrer-when-downgrade";
+  carte.allowFullscreen = true;
+  document.getElementById("carte-attente").replaceWith(carte);
+});
 
 /* ---------------- Banque de photos ----------------
    Une seule liste de photos (distributeur, ferme, produits…), réutilisée dans les

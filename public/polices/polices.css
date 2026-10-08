@@ -1,0 +1,14 @@
+/* Polices hébergées sur le site (plus d'appel à Google Fonts : aucune adresse IP envoyée à Google).
+   Karla et Zilla Slab, licence SIL Open Font License 1.1, jeu de caractères latin. */
+@font-face {
+  font-family: "Karla"; font-style: normal; font-weight: 400 600; font-display: swap;
+  src: url(karla.woff2) format("woff2");
+}
+@font-face {
+  font-family: "Zilla Slab"; font-style: normal; font-weight: 500; font-display: swap;
+  src: url(zilla-slab-500.woff2) format("woff2");
+}
+@font-face {
+  font-family: "Zilla Slab"; font-style: normal; font-weight: 700; font-display: swap;
+  src: url(zilla-slab-700.woff2) format("woff2");
+}
